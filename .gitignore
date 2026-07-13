@@ -1,0 +1,18 @@
+# Python compiler cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local environment folders
+.venv/
+venv/
+env/
+ENV/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# VS Code config
+.vscode/

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Factory Incidents</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: #f8fafc; color: #1e293b; padding: 40px; }
+        .container { max-width: 1300px; margin: 0 auto; }
+        .back-btn { background-color: #3b82f6; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; margin-bottom: 25px; transition: background 0.2s; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2); }
+        .back-btn:hover { background-color: #2563eb; }
+        .header-section { margin-bottom: 25px; }
+        .header-section h2 { font-size: 24px; color: #1e3a8a; font-weight: 700; }
+        .header-section p { font-size: 14px; color: #64748b; margin-top: 5px; }
+        
+        .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .search-box { padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 6px; width: 300px; outline: none; font-size: 14px; }
+        .counter-text { font-size: 14px; color: #475569; font-weight: 500; }
+
+        .table-wrapper { background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+        .incident-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        .incident-table th, .incident-table td { padding: 14px 18px; border-bottom: 1px solid #e2e8f0; }
+        .incident-table th { background-color: #1e3a8a; color: white; font-weight: 600; }
+        .incident-table tr:hover { background-color: #f8fafc; }
+        
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 25px; }
+        .page-btn { background: white; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; color: #475569; transition: all 0.2s; }
+        .page-btn:hover:not(:disabled) { background: #f1f5f9; }
+        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        #pageInfo { font-size: 14px; font-weight: 500; color: #475569; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-btn">⬅️ Back to Dashboard</a>
+        
+        <div class="header-section">
+            <h2>All Reported Factory Incidents</h2>
+            <p>ফ্যাক্টরির সমস্ত ডাটা ফাইল (১০,০০০+ ইনসিডেন্ট) লাইভ লোড করা হয়েছে।</p>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="tableSearch" class="search-box" placeholder="🔍 Search Incident ID, Dept, Category...">
+            <span class="counter-text" id="totalRecords">Total Records: 0</span>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="incident-table">
+                <thead>
+                    <tr>
+                        <th>Incident ID</th>
+                        <th>Reported Date</th>
+                        <th>Department</th>
+                        <th>Category</th>
+                        <th>Severity</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="fullTableBody">
+                    <tr><td colspan="6" style="text-align:center; padding: 30px; color: #64748b;">Processing Data via SheetJS...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <button class="page-btn" id="prevPageBtn" disabled>Previous</button>
+            <span id="pageInfo">Page 1 of 1</span>
+            <button class="page-btn" id="nextPageBtn">Next</button>
+        </div>
+    </div>
+
+    <script>
+        let rawData = [];
+        let filteredData = [];
+        let currentPage = 1;
+        const rowsPerPage = 50; // প্রতি পেজে ৫০টি করে ডেটা দেখাবে
+
+        async function loadData() {
+            // ১ নম্বর পাথ: মেইন ডিরেক্টরি ট্রাই করা
+            try {
+                const response = await fetch("data/factory_incidents_cleaned.csv");
+                if (!response.ok) throw new Error("Fallback to alternative path");
+                const buffer = await response.arrayBuffer();
+                processExcel(buffer);
+            } catch (err) {
+                // ২ নম্বর পাথ: যদি অন্য লোকেশনে সার্ভ করা হয়ে থাকে
+                try {
+                    const response = await fetch("../data/raw/Synthetic_Factory_Incident_Dataset_10000.csv");
+                    if (!response.ok) throw new Error("File not found");
+                    const buffer = await response.arrayBuffer();
+                    processExcel(buffer);
+                } catch (localErr) {
+                    document.getElementById("fullTableBody").innerHTML = `
+                        <tr><td colspan="6" style="text-align:center; color:red; padding:20px; font-weight:bold;">
+                            ❌ ডাটা ফাইলটি পাওয়া যায়নি।
+                        </td></tr>`;
+                }
+            }
+        }
+
+        function processExcel(buffer) {
+            try {
+                const workbook = XLSX.read(buffer, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                rawData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                filteredData = [...rawData];
+                renderTable();
+            } catch (e) {
+                document.getElementById("fullTableBody").innerHTML = `<tr><td colspan="6" style="text-align:center; color:red; padding:20px;">ডাটা কনভার্ট করতে ত্রুটি হয়েছে।</td></tr>`;
+            }
+        }
+
+        // কলাম নেম ডাইনামিকালি খোঁজার জন্য হেল্পার ফাংশন
+        function getPropValue(obj, keysArray) {
+            for (let key of keysArray) {
+                const foundKey = Object.keys(obj).find(k => 
+                    k.toLowerCase().replace(/[\s_-]/g, '') === key.toLowerCase().replace(/[\s_-]/g, '')
+                );
+                if (foundKey && obj[foundKey] !== undefined) return obj[foundKey];
+            }
+            return "";
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById("fullTableBody");
+            tbody.innerHTML = "";
+            
+            // পেজিনেশন হিসাব
+            const start = (currentPage - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            const pageData = filteredData.slice(start, end);
+
+            document.getElementById("totalRecords").innerText = `Total Records: ${filteredData.length}`;
+            
+            if(pageData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No matching records found</td></tr>`;
+                return;
+            }
+
+            pageData.forEach(row => {
+                let incId = getPropValue(row, ['Incident_ID', 'IncidentID', 'id', 'Incident No']) || Object.values(row)[0] || '';
+                let date = getPropValue(row, ['Reported_Date', 'ReportedDate', 'Date', 'date']);
+                let dept = getPropValue(row, ['Department', 'dept', 'division']);
+                let cat = getPropValue(row, ['Category', 'cat', 'type']);
+                let severity = getPropValue(row, ['Severity', 'level']) || 'Medium';
+                let status = getPropValue(row, ['Status', 'state']);
+
+                let severityColor = severity.toLowerCase() === 'high' ? '#ef4444' : (severity.toLowerCase() === 'medium' ? '#f59e0b' : '#10b981');
+                
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td><strong>${incId}</strong></td>
+                    <td>${date}</td>
+                    <td>${dept}</td>
+                    <td>${cat}</td>
+                    <td><span style="color:${severityColor}; font-weight:600;">${severity}</span></td>
+                    <td>${status}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // পেজিনেশন টেক্সট ও বাটন আপডেট
+            const totalPages = Math.ceil(filteredData.length / rowsPerPage) || 1;
+            document.getElementById("pageInfo").innerText = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById("prevPageBtn").disabled = currentPage === 1;
+            document.getElementById("nextPageBtn").disabled = currentPage === totalPages;
+        }
+
+        // রিয়েল-টাইম লাইভ সার্চ ফিল্টার
+        document.getElementById("tableSearch").addEventListener("input", (e) => {
+            const text = e.target.value.toLowerCase();
+            filteredData = rawData.filter(row => 
+                Object.values(row).some(val => String(val).toLowerCase().includes(text))
+            );
+            currentPage = 1;
+            renderTable();
+        });
+
+        // পেজিনেশন ক্লিক ইভেন্ট
+        document.getElementById("prevPageBtn").addEventListener("click", () => { if(currentPage > 1) { currentPage--; window.scrollTo(0,0); renderTable(); } });
+        document.getElementById("nextPageBtn").addEventListener("click", () => { if((currentPage * rowsPerPage) < filteredData.length) { currentPage++; window.scrollTo(0,0); renderTable(); } });
+
+        loadData();
+    </script>
+</body>
+</html>
