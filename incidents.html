@@ -43,8 +43,8 @@
         </div>
 
         <div class="controls">
-            <input type="text" id="tableSearch" class="search-box" placeholder="🔍 Search Incident ID, Dept, Category...">
-            <span class="counter-text" id="totalRecords">Total Records: 0</span>
+            <input type="text" id="tableSearch" class="search-box" placeholder="🔍 Search Incident ID or Dept...">
+            <span class="counter-text" id="totalRecords">Showing 0 of 0 records</span>
         </div>
 
         <div class="table-wrapper">
@@ -76,17 +76,16 @@
         let rawData = [];
         let filteredData = [];
         let currentPage = 1;
-        const rowsPerPage = 50; // প্রতি পেজে ৫০টি করে ডেটা দেখাবে
+        const rowsPerPage = 50;
 
+        // লোকাল ও গিটহাব উভয় সার্ভারেই যেন ফাইল ঠিকমতো পায় তার ডুয়াল পাথ ট্র্যাকিং
         async function loadData() {
-            // ১ নম্বর পাথ: মেইন ডিরেক্টরি ট্রাই করা
             try {
                 const response = await fetch("data/factory_incidents_cleaned.csv");
-                if (!response.ok) throw new Error("Fallback to alternative path");
+                if (!response.ok) throw new Error("Trying alternative path...");
                 const buffer = await response.arrayBuffer();
                 processExcel(buffer);
             } catch (err) {
-                // ২ নম্বর পাথ: যদি অন্য লোকেশনে সার্ভ করা হয়ে থাকে
                 try {
                     const response = await fetch("../data/raw/Synthetic_Factory_Incident_Dataset_10000.csv");
                     if (!response.ok) throw new Error("File not found");
@@ -95,7 +94,7 @@
                 } catch (localErr) {
                     document.getElementById("fullTableBody").innerHTML = `
                         <tr><td colspan="6" style="text-align:center; color:red; padding:20px; font-weight:bold;">
-                            ❌ ডাটা ফাইলটি পাওয়া যায়নি।
+                            ❌ ডাটা ফাইলটি খুঁজে পাওয়া যায়নি।
                         </td></tr>`;
                 }
             }
@@ -111,11 +110,10 @@
                 filteredData = [...rawData];
                 renderTable();
             } catch (e) {
-                document.getElementById("fullTableBody").innerHTML = `<tr><td colspan="6" style="text-align:center; color:red; padding:20px;">ডাটা কনভার্ট করতে ত্রুটি হয়েছে।</td></tr>`;
+                document.getElementById("fullTableBody").innerHTML = `<tr><td colspan="6" style="text-align:center; color:red; padding:20px;">ডাটা প্রসেস করতে সমস্যা হয়েছে।</td></tr>`;
             }
         }
 
-        // কলাম নেম ডাইনামিকালি খোঁজার জন্য হেল্পার ফাংশন
         function getPropValue(obj, keysArray) {
             for (let key of keysArray) {
                 const foundKey = Object.keys(obj).find(k => 
@@ -130,7 +128,7 @@
             const tbody = document.getElementById("fullTableBody");
             tbody.innerHTML = "";
             
-            // পেজিনেশন হিসাব
+            // 🎯 পেজিনেশন স্লাইস (১০,০০০ ডাটা একসঙ্গে রেন্ডার না করে ৫০টি করে করবে)
             const start = (currentPage - 1) * rowsPerPage;
             const end = start + rowsPerPage;
             const pageData = filteredData.slice(start, end);
@@ -164,14 +162,13 @@
                 tbody.appendChild(tr);
             });
 
-            // পেজিনেশন টেক্সট ও বাটন আপডেট
             const totalPages = Math.ceil(filteredData.length / rowsPerPage) || 1;
             document.getElementById("pageInfo").innerText = `Page ${currentPage} of ${totalPages}`;
             document.getElementById("prevPageBtn").disabled = currentPage === 1;
             document.getElementById("nextPageBtn").disabled = currentPage === totalPages;
         }
 
-        // রিয়েল-টাইম লাইভ সার্চ ফিল্টার
+        // 🎯 লাইভ সার্চবার একটিভ করা হলো
         document.getElementById("tableSearch").addEventListener("input", (e) => {
             const text = e.target.value.toLowerCase();
             filteredData = rawData.filter(row => 
@@ -181,7 +178,7 @@
             renderTable();
         });
 
-        // পেজিনেশন ক্লিক ইভেন্ট
+        // 🎯 পেজিনেশন নেভিগেশন সচল
         document.getElementById("prevPageBtn").addEventListener("click", () => { if(currentPage > 1) { currentPage--; window.scrollTo(0,0); renderTable(); } });
         document.getElementById("nextPageBtn").addEventListener("click", () => { if((currentPage * rowsPerPage) < filteredData.length) { currentPage++; window.scrollTo(0,0); renderTable(); } });
 
