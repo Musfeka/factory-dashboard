@@ -79,13 +79,11 @@
         const rowsPerPage = 50; 
 
         async function loadData() {
-            // গিটহাব পেজেস এর রিপোজিটরি নেম অটোমেটিক ডিটেক্ট করার লজিক
             const pathArray = window.location.pathname.split('/');
             const repoName = pathArray[1] ? `/${pathArray[1]}` : '';
             
-            // লোকাল এবং লাইভ সার্ভার উভয়ের জন্যই মাল্টিপল পাথ ফলব্যাক মেকানিজম
             const paths = [
-                `${repoName}/data/factory_incidents_cleaned.csv`, 
+                `${repoName}/data/factory_incidents_cleaned.csv`,
                 "./data/factory_incidents_cleaned.csv",
                 "data/factory_incidents_cleaned.csv",
                 "../data/factory_incidents_cleaned.csv"
@@ -102,17 +100,14 @@
                         break; 
                     }
                 } catch (e) {
-                    console.log("Skipping invalid path: " + path);
+                    console.log("Skipping path: " + path);
                 }
             }
 
             if (!success) {
                 document.getElementById("fullTableBody").innerHTML = `
-                    <tr><td colspan="6" style="text-align:center; color:red; padding:40px; font-weight:bold;">
-                        ❌ Data file could not be loaded.<br>
-                        <span style="font-size:12px; font-weight:400; color:#64748b; display:block; margin-top:5px;">
-                            Please ensure your CSV file is inside the 'data' folder and accurately named 'factory_incidents_cleaned.csv'.
-                        </span>
+                    <tr><td colspan="6" style="text-align:center; color:red; padding:20px; font-weight:bold;">
+                        ❌ Data file could not be loaded. Please ensure the CSV file is present in your 'data' folder.
                     </td></tr>`;
             }
         }
@@ -152,7 +147,7 @@
             document.getElementById("totalRecords").innerText = `Total Records: ${filteredData.length}`;
             
             if(pageData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">No matching records found</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No matching records found</td></tr>`;
                 return;
             }
 
