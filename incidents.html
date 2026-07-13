@@ -60,7 +60,7 @@
                     </tr>
                 </thead>
                 <tbody id="fullTableBody">
-                    <tr><td colspan="6" style="text-align:center; padding: 30px; color: #64748b;">Loading data via SheetJS...</td></tr>
+                    <tr><td colspan="6" style="text-align:center; padding: 30px; color: #64748b;">Loading data securely...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -78,20 +78,22 @@
         let currentPage = 1;
         const rowsPerPage = 50; 
 
-        // গিটহাব পেজেস এবং লোকাল হোস্টে পাথ এরর দূর করার স্মার্ট ডাইনামিক ফাংশন
         async function loadData() {
-            // গিটহাব এবং লোকাল সার্ভার উভয় ডিরেক্টরির জন্য পাথ ট্রাই করা
+            // কারেন্ট ইউআরএল থেকে মেইন ডোমেইন পাথটি ডাইনামিকালি বের করা হচ্ছে যেন লোকাল বা গিটহাব কোথাও পাথ ভুল না হয়
+            const currentOrigin = window.location.origin;
+            const currentPathname = window.location.pathname;
+            const projectRoot = currentPathname.substring(0, currentPathname.lastIndexOf('/src') || currentPathname.lastIndexOf('/'));
+            
             const paths = [
-                "../data/factory_incidents_cleaned.csv",
+                `${currentOrigin}${projectRoot}/data/factory_incidents_cleaned.csv`,
                 "data/factory_incidents_cleaned.csv",
-                "./data/factory_incidents_cleaned.csv",
-                "../data/raw/Synthetic_Factory_Incident_Dataset_10000.csv"
+                "../data/factory_incidents_cleaned.csv",
+                "./data/factory_incidents_cleaned.csv"
             ];
 
             let success = false;
             for (let path of paths) {
                 try {
-                    console.log("Attempting to fetch data from: " + path);
                     const response = await fetch(path);
                     if (response.ok) {
                         const buffer = await response.arrayBuffer();
@@ -100,14 +102,14 @@
                         break; 
                     }
                 } catch (e) {
-                    console.log("Failed path: " + path);
+                    console.log("Skipping path: " + path);
                 }
             }
 
             if (!success) {
                 document.getElementById("fullTableBody").innerHTML = `
                     <tr><td colspan="6" style="text-align:center; color:red; padding:20px; font-weight:bold;">
-                        ❌ ডাটা ফাইলটি পাওয়া যায়নি। অনুগ্রহ করে নিশ্চিত করুন আপনার 'data' ফোল্ডারে CSV ফাইলটি আপলোড করা আছে।
+                        ❌ ডাটা ফাইলটি ব্রাউজার লোড করতে পারছে না। নিশ্চিত করুন গিটহাবে 'data' ফোল্ডারের ভেতর ফাইলটি আছে।
                     </td></tr>`;
             }
         }
@@ -126,7 +128,6 @@
             }
         }
 
-        // কলাম নেম ডাইনামিকালি খোঁজার জন্য হেল্পার ফাংশন যেন কোনো ডেটা মিস না হয়
         function getPropValue(obj, keysArray) {
             for (let key of keysArray) {
                 const foundKey = Object.keys(obj).find(k => 
@@ -141,7 +142,6 @@
             const tbody = document.getElementById("fullTableBody");
             tbody.innerHTML = "";
             
-            // সুন্দর ৫০টি করে ডেটা দেখানোর জন্য পেজিনেশন স্লাইস
             const start = (currentPage - 1) * rowsPerPage;
             const end = start + rowsPerPage;
             const pageData = filteredData.slice(start, end);
@@ -181,7 +181,6 @@
             document.getElementById("nextPageBtn").disabled = currentPage === totalPages;
         }
 
-        // রিয়েল-টাইম লাইভ সার্চ ফিল্টার
         document.getElementById("tableSearch").addEventListener("input", (e) => {
             const text = e.target.value.toLowerCase();
             filteredData = rawData.filter(row => 
@@ -191,7 +190,6 @@
             renderTable();
         });
 
-        // পেজিনেশন বাটন ক্লিক ইভেন্ট
         document.getElementById("prevPageBtn").addEventListener("click", () => { if(currentPage > 1) { currentPage--; window.scrollTo(0,0); renderTable(); } });
         document.getElementById("nextPageBtn").addEventListener("click", () => { if((currentPage * rowsPerPage) < filteredData.length) { currentPage++; window.scrollTo(0,0); renderTable(); } });
 
