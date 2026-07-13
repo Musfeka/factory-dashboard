@@ -39,7 +39,7 @@
         
         <div class="header-section">
             <h2>All Reported Factory Incidents</h2>
-            <p>ফ্যাক্টরির সমস্ত ডাটা ফাইল (১০,০০০+ ইনসিডেন্ট) লাইভ লোড করা হয়েছে।</p>
+            <p>Live data loaded from the factory incident dataset (10,000+ records).</p>
         </div>
 
         <div class="controls">
@@ -79,16 +79,11 @@
         const rowsPerPage = 50; 
 
         async function loadData() {
-            // কারেন্ট ইউআরএল থেকে মেইন ডোমেইন পাথটি ডাইনামিকালি বের করা হচ্ছে যেন লোকাল বা গিটহাব কোথাও পাথ ভুল না হয়
-            const currentOrigin = window.location.origin;
-            const currentPathname = window.location.pathname;
-            const projectRoot = currentPathname.substring(0, currentPathname.lastIndexOf('/src') || currentPathname.lastIndexOf('/'));
-            
+            // Hardcoded absolute paths for local server and GitHub Pages to avoid context issues
             const paths = [
-                `${currentOrigin}${projectRoot}/data/factory_incidents_cleaned.csv`,
+                "./data/factory_incidents_cleaned.csv",
                 "data/factory_incidents_cleaned.csv",
-                "../data/factory_incidents_cleaned.csv",
-                "./data/factory_incidents_cleaned.csv"
+                "../data/factory_incidents_cleaned.csv"
             ];
 
             let success = false;
@@ -109,7 +104,7 @@
             if (!success) {
                 document.getElementById("fullTableBody").innerHTML = `
                     <tr><td colspan="6" style="text-align:center; color:red; padding:20px; font-weight:bold;">
-                        ❌ ডাটা ফাইলটি ব্রাউজার লোড করতে পারছে না। নিশ্চিত করুন গিটহাবে 'data' ফোল্ডারের ভেতর ফাইলটি আছে।
+                        ❌ Data file could not be loaded. Please ensure the CSV file is present in your 'data' folder.
                     </td></tr>`;
             }
         }
@@ -124,7 +119,7 @@
                 filteredData = [...rawData];
                 renderTable();
             } catch (e) {
-                document.getElementById("fullTableBody").innerHTML = `<tr><td colspan="6" style="text-align:center; color:red; padding:20px;">ডাটা কনভার্ট করতে ত্রুটি হয়েছে।</td></tr>`;
+                document.getElementById("fullTableBody").innerHTML = `<tr><td colspan="6" style="text-align:center; color:red; padding:20px;">Error converting data.</td></tr>`;
             }
         }
 
