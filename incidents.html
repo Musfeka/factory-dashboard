@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -35,7 +35,7 @@
 </head>
 <body>
     <div class="container">
-        <a href="index.html" class="back-btn">⬅️ Back to Dashboard</a>
+        <a href="index.html" class="back-btn">â¬…ï¸ Back to Dashboard</a>
         
         <div class="header-section">
             <h2>All Reported Factory Incidents</h2>
@@ -43,7 +43,7 @@
         </div>
 
         <div class="controls">
-            <input type="text" id="tableSearch" class="search-box" placeholder="🔍 Search Incident ID, Dept, Category...">
+            <input type="text" id="tableSearch" class="search-box" placeholder="ðŸ” Search Incident ID, Dept, Category...">
             <span class="counter-text" id="totalRecords">Total Records: 0</span>
         </div>
 
@@ -83,10 +83,10 @@
             const repoName = pathArray[1] ? `/${pathArray[1]}` : '';
             
             const paths = [
-                `${repoName}/data/factory_incidents_cleaned.csv`,
-                "./data/factory_incidents_cleaned.csv",
-                "data/factory_incidents_cleaned.csv",
-                "../data/factory_incidents_cleaned.csv"
+                `${repoName}/data/factory_incidents_cleaned.xlsx`,
+                "./data/factory_incidents_cleaned.xlsx",
+                "data/factory_incidents_cleaned.xlsx",
+                "../data/factory_incidents_cleaned.xlsx"
             ];
 
             let success = false;
@@ -107,7 +107,7 @@
             if (!success) {
                 document.getElementById("fullTableBody").innerHTML = `
                     <tr><td colspan="6" style="text-align:center; color:red; padding:20px; font-weight:bold;">
-                        ❌ Data file could not be loaded. Please ensure the CSV file is present in your 'data' folder.
+                        âŒ Data file could not be loaded. Please ensure the CSV file is present in your 'data' folder.
                     </td></tr>`;
             }
         }
@@ -195,3 +195,4 @@
     </script>
 </body>
 </html>
+
